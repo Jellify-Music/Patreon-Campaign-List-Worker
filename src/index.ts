@@ -21,6 +21,7 @@ export default {
 			}
 		})
 
+		const membersQuery = QueryBuilder.campaignMembers.addRelationships(['user']).addRelationshipAttributes('user', ['full_name'])
 		const tiersQuery = QueryBuilder.campaign.addRelationships(['tiers']).addRelationshipAttributes('tiers', ['amount_cents'])
 
 		// @ts-ignore
@@ -29,8 +30,17 @@ export default {
 				console.debug(response.data)
 
 				const tiers = response.data.relationships.tiers.data
-			
-				return new Response(JSON.stringify(tiers))
+
+				// @ts-ignore
+				return client.fetchCampaignMembers(env.PATREON_CAMPAIGN_ID, membersQuery)
+					.then(response => {
+						console.debug(response.data)
+						return new Response(JSON.stringify(response.data) + JSON.stringify(tiers));
+					})
+					.catch((error) => {
+						console.error(error)
+						return new Response(JSON.stringify(error));
+					})
 				
 				// if (!tiers) return new Response(JSON.stringify({ error: 'No tiers found' }))
 
