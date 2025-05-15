@@ -1,4 +1,4 @@
-import { PatreonCreatorClient } from 'patreon-api.ts'
+import { PatreonCreatorClient, QueryBuilder } from 'patreon-api.ts'
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -18,9 +18,14 @@ export default {
 			}
 		})
 
-		return client.fetchCampaignMembers('13635179')
+		const query = QueryBuilder.campaign.addRelationships(['tiers'])
+
+		// @ts-ignore
+		return client.fetchCampaign(env.PATREON_CAMPAIGN_ID, query)
 			.then(response => {
 				console.debug(response.data)
+
+				
 				return new Response(JSON.stringify(response.data));
 			})
 			.catch((error) => {
