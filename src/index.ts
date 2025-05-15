@@ -34,10 +34,16 @@ export default {
 				const activePremiumPatrons = response.data.filter((patron) => {
 					const entitledTiers = patron.relationships.currently_entitled_tiers.data
 
+					const asdf = patron
+
 					return patron.attributes.patron_status === 'active_patron'
 				})
 
-				return new Response(JSON.stringify(activePremiumPatrons))
+				return new Response(JSON.stringify(activePremiumPatrons.map((patron) => {
+					return {
+						fullName: patron.attributes.full_name
+					}
+				})))
 			})
 			.catch((error) => {
 				console.error(error)
