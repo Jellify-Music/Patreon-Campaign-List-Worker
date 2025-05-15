@@ -1,6 +1,7 @@
 var env = process.env;
 
-var patreon = require('patreon')
+// @ts-ignore :(
+import { patreon } from 'patreon'
 
 var patreonApi = patreon(env.PATREON_ACCESS_TOKEN)
 
