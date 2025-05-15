@@ -12,9 +12,11 @@ export default {
 
 		return patreonApi('/api/oauth2/v2/campaigns/anultravioletaurora/members')
 			.then((response: any) => {
+				console.debug(response)
 				return new Response(JSON.stringify(response));
 			})
 			.catch((error: any) => {
+				console.error(error)
 				return new Response(JSON.stringify(error));
 			})		
 	},
