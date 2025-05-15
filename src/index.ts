@@ -18,15 +18,26 @@ export default {
 			}
 		})
 
-		const query = QueryBuilder.campaign.addRelationships(['tiers']).addRelationshipAttributes('tiers', ['patron_count', 'title', 'amount_cents', 'description'])
+		const tiersQuery = QueryBuilder.campaign.addRelationships(['tiers']).addRelationshipAttributes('tiers', ['patron_count', 'title', 'amount_cents', 'description'])
+		const membersQuery = QueryBuilder.campaignMembers.addRelationships(['user']).addRelationshipAttributes('user', ['full_name'])
 
 		// @ts-ignore
-		return client.fetchCampaign(env.PATREON_CAMPAIGN_ID, query)
+		return client.fetchCampaign(env.PATREON_CAMPAIGN_ID, tiersQuery)
 			.then(response => {
 				console.debug(response.data)
 
+				const tiers = response.data.relationships.tiers.data
 				
-				return new Response(JSON.stringify(response.data));
+				// @ts-ignore
+				return client.fetchCampaignMembers(env.PATREON_CAMPAIGN_ID, membersQuery)
+					.then(response => {
+						console.debug(response.data)
+						return new Response(JSON.stringify(response.data));
+					})
+					.catch((error) => {
+						console.error(error)
+						return new Response(JSON.stringify(error));
+					})
 			})
 			.catch((error) => {
 				console.error(error)
