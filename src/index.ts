@@ -18,7 +18,7 @@ export default {
 			}
 		})
 
-		const query = QueryBuilder.campaign.addRelationships(['tiers'])
+		const query = QueryBuilder.campaign.addRelationships(['tiers']).addRelationshipAttributes('tiers', ['patron_count', 'title', 'amount_cents', 'description'])
 
 		// @ts-ignore
 		return client.fetchCampaign(env.PATREON_CAMPAIGN_ID, query)
