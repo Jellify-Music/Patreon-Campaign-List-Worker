@@ -21,39 +21,23 @@ export default {
 			}
 		})
 
-		const membersQuery = QueryBuilder.campaignMembers.addRelationships(['user']).addRelationshipAttributes('user', ['full_name'])
-		const tiersQuery = QueryBuilder.campaign.addRelationships(['tiers']).addRelationshipAttributes('tiers', ['amount_cents'])
+		const membersQuery = QueryBuilder.campaignMembers
+			.addRelationships(['user', 'currently_entitled_tiers', 'campaign'])
+			.includeAll()
+			.includeAllRelationships()
 
-		// @ts-ignore
-		return client.fetchCampaign(env.PATREON_CAMPAIGN_ID, tiersQuery)
+			// @ts-ignore
+		return client.fetchCampaignMembers(env.PATREON_CAMPAIGN_ID, membersQuery)
 			.then(response => {
 				console.debug(response.data)
 
-				const tiers = response.data.relationships.tiers.data
+				const activePremiumPatrons = response.data.filter((patron) => {
+					const entitledTiers = patron.relationships.currently_entitled_tiers.data
 
-				// @ts-ignore
-				return client.fetchCampaignMembers(env.PATREON_CAMPAIGN_ID, membersQuery)
-					.then(response => {
-						console.debug(response.data)
-						return new Response(JSON.stringify(response.data) + JSON.stringify(tiers));
-					})
-					.catch((error) => {
-						console.error(error)
-						return new Response(JSON.stringify(error));
-					})
-				
-				// if (!tiers) return new Response(JSON.stringify({ error: 'No tiers found' }))
+					return patron.attributes.patron_status === 'active_patron'
+				})
 
-				// // @ts-ignore
-				// return client.fetchCampaignMembers(env.PATREON_CAMPAIGN_ID, membersQuery)
-				// 	.then(response => {
-				// 		console.debug(response.data)
-				// 		return new Response(JSON.stringify(response.data));
-				// 	})
-				// 	.catch((error) => {
-				// 		console.error(error)
-				// 		return new Response(JSON.stringify(error));
-				// 	})
+				return new Response(JSON.stringify(activePremiumPatrons))
 			})
 			.catch((error) => {
 				console.error(error)
