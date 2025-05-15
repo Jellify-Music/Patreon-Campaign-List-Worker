@@ -18,7 +18,7 @@ export default {
 			}
 		})
 
-		return client.fetchCampaignMembers('anultravioletaurora')
+		return client.fetchCampaignMembers('39918652')
 			.then(response => {
 				console.debug(response.data)
 				return new Response(JSON.stringify(response.data));
