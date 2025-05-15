@@ -1,4 +1,4 @@
-import { PatreonCreatorClient, QueryBuilder } from 'patreon-api.ts'
+import { PatreonCreatorClient, QueryBuilder, Type } from 'patreon-api.ts'
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -15,11 +15,13 @@ export default {
 					// @ts-ignore
 					refresh_token: env.PATREON_REFRESH_TOKEN,
 				}
+			},
+			rest: {
+				includeAllQueries: true
 			}
 		})
 
-		const tiersQuery = QueryBuilder.campaign.addRelationships(['tiers']).addRelationshipAttributes('tiers', ['patron_count', 'title', 'amount_cents', 'description'])
-		const membersQuery = QueryBuilder.campaignMembers.addRelationships(['user']).addRelationshipAttributes('user', ['full_name'])
+		const tiersQuery = QueryBuilder.campaign.addRelationships(['tiers']).addRelationshipAttributes('tiers', ['amount_cents'])
 
 		// @ts-ignore
 		return client.fetchCampaign(env.PATREON_CAMPAIGN_ID, tiersQuery)
@@ -27,17 +29,21 @@ export default {
 				console.debug(response.data)
 
 				const tiers = response.data.relationships.tiers.data
+			
+				return new Response(JSON.stringify(tiers))
 				
-				// @ts-ignore
-				return client.fetchCampaignMembers(env.PATREON_CAMPAIGN_ID, membersQuery)
-					.then(response => {
-						console.debug(response.data)
-						return new Response(JSON.stringify(response.data));
-					})
-					.catch((error) => {
-						console.error(error)
-						return new Response(JSON.stringify(error));
-					})
+				// if (!tiers) return new Response(JSON.stringify({ error: 'No tiers found' }))
+
+				// // @ts-ignore
+				// return client.fetchCampaignMembers(env.PATREON_CAMPAIGN_ID, membersQuery)
+				// 	.then(response => {
+				// 		console.debug(response.data)
+				// 		return new Response(JSON.stringify(response.data));
+				// 	})
+				// 	.catch((error) => {
+				// 		console.error(error)
+				// 		return new Response(JSON.stringify(error));
+				// 	})
 			})
 			.catch((error) => {
 				console.error(error)
