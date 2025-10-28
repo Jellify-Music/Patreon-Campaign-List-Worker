@@ -1,7 +1,7 @@
 
 const GITHUB_API_URL = 'https://api.github.com/graphql';
 
-async function fetchGitHubSponsors(env: Env): Promise<string[]> {
+export default async function fetchGitHubSponsors(env: Env): Promise<string[]> {
     const query = `
 		query {
 			viewer {

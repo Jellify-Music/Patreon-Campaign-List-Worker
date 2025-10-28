@@ -1,5 +1,6 @@
 import { PatreonCreatorClient, QueryBuilder, Type } from 'patreon-api.ts'
 import { Supporter } from './types';
+import fetchGitHubSponsors from './github';
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
