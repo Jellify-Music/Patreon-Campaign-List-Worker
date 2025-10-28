@@ -1,7 +1,15 @@
 import { PatreonCreatorClient, QueryBuilder, Type } from 'patreon-api.ts'
+import { Supporter } from './types';
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+
+		try {
+			const githubSupporters = await fetchGitHubSponsors(env);
+			console.debug('GitHub Sponsors:', githubSupporters);
+		} catch (error) {
+			console.error('Failed to fetch GitHub Sponsors', error);
+		}
 
 		const client = new PatreonCreatorClient({
 			oauth: {
@@ -26,7 +34,7 @@ export default {
 			.includeAll()
 			.includeAllRelationships()
 
-			// @ts-ignore
+		// @ts-ignore
 		return client.fetchCampaignMembers(env.PATREON_CAMPAIGN_ID, membersQuery)
 			.then(response => {
 				console.debug(response.data)
@@ -38,7 +46,7 @@ export default {
 				return new Response(JSON.stringify(activePremiumPatrons.map((patron) => {
 					return {
 						fullName: patron.attributes.full_name
-					}
+					} as Supporter
 				})))
 			})
 			.catch((error) => {
