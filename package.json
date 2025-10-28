@@ -10,13 +10,13 @@
 		"cf-typegen": "wrangler types"
 	},
 	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.8.19",
-		"@types/node": "^22.15.18",
-		"typescript": "^5.5.2",
+		"@cloudflare/vitest-pool-workers": "0.8.19",
+		"@types/node": "22.15.18",
+		"typescript": "5.5.2",
 		"vitest": "~3.0.7",
-		"wrangler": "^4.14.4"
+		"wrangler": "4.45.1"
 	},
 	"dependencies": {
-		"patreon-api.ts": "^0.13.0"
+		"patreon-api.ts": "0.15.1"
 	}
 }

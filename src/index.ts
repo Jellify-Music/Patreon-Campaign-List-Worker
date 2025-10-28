@@ -32,10 +32,6 @@ export default {
 				console.debug(response.data)
 
 				const activePremiumPatrons = response.data.filter((patron) => {
-					const entitledTiers = patron.relationships.currently_entitled_tiers.data
-
-					const asdf = patron
-
 					return patron.attributes.patron_status === 'active_patron'
 				})
 
