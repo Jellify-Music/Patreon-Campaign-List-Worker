@@ -35,11 +35,9 @@ export default async function fetchGitHubSponsors(env: Env): Promise<string[]> {
         console.error(`GitHub API error: ${response.status} ${response.statusText}`);
         return [];
     } else {
-
-        console.debug('GitHub API response OK', await response.json());
-        
         const json = await response.json() as any
         
+        console.debug(`GitHub API response OK: ${json}`);
         
         const sponsors = json.data?.viewer?.sponsorshipsAsMaintainer?.nodes ?? [];
         
