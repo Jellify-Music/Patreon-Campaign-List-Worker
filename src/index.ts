@@ -5,8 +5,10 @@ import fetchGitHubSponsors from './github';
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 
+		let githubSupporters: Supporter[] = [];
+		
 		try {
-			const githubSupporters = await fetchGitHubSponsors(env);
+			githubSupporters = await fetchGitHubSponsors(env);
 			console.debug(`GitHub Sponsors:`, JSON.stringify(githubSupporters));
 		} catch (error) {
 			console.error('Failed to fetch GitHub Sponsors', error);
@@ -48,7 +50,7 @@ export default {
 					return {
 						fullName: patron.attributes.full_name
 					} as Supporter
-				})))
+				}).concat(githubSupporters)));
 			})
 			.catch((error) => {
 				console.error(error)
