@@ -24,6 +24,7 @@ export default async function fetchGitHubSponsors(env: Env): Promise<string[]> {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
+            'User-Agent': 'Jellify-Patreon-Campaign-List-Worker',
             // @ts-ignore
             'Authorization': `Bearer ${env.GITHUB_SPONSORS_TOKEN}`,
         },
