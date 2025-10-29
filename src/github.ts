@@ -42,7 +42,9 @@ export default async function fetchGitHubSponsors(env: Env): Promise<Supporter[]
         
         const sponsors = json.data?.viewer?.sponsorshipsAsMaintainer?.nodes ?? [];
         
-        return sponsors.map((n: any) => {
+        return sponsors
+            .filter((sponsor: any) => sponsor != null && sponsor.sponsorEntity)
+            .map((n: any) => {
             return {
                 fullName: n.sponsorEntity?.name || n.sponsorEntity?.login
             } as Supporter
