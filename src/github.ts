@@ -1,7 +1,8 @@
+import { Supporter } from "./types";
 
 const GITHUB_API_URL = 'https://api.github.com/graphql';
 
-export default async function fetchGitHubSponsors(env: Env): Promise<string[]> {
+export default async function fetchGitHubSponsors(env: Env): Promise<Supporter[]> {
     const query = `
 		query {
 			viewer {
@@ -41,6 +42,10 @@ export default async function fetchGitHubSponsors(env: Env): Promise<string[]> {
         
         const sponsors = json.data?.viewer?.sponsorshipsAsMaintainer?.nodes ?? [];
         
-        return sponsors.map((n: any) => n.sponsorEntity?.name || n.sponsorEntity?.login)
+        return sponsors.map((n: any) => {
+            return {
+                fullName: n.sponsorEntity?.name || n.sponsorEntity?.login
+            } as Supporter
+        })
     }
 }
