@@ -7,7 +7,7 @@ export default {
 
 		try {
 			const githubSupporters = await fetchGitHubSponsors(env);
-			console.debug('GitHub Sponsors:', githubSupporters);
+			console.debug(`GitHub Sponsors:`, JSON.stringify(githubSupporters));
 		} catch (error) {
 			console.error('Failed to fetch GitHub Sponsors', error);
 		}
