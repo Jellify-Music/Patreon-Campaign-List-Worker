@@ -17,6 +17,6 @@
 		"wrangler": "4.84.1"
 	},
 	"dependencies": {
-		"patreon-api.ts": "0.15.1"
+		"patreon-api.ts": "0.19.0"
 	}
 }
