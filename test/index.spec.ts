@@ -1,24 +1,106 @@
-import { env, createExecutionContext, waitOnExecutionContext, SELF } from 'cloudflare:test';
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+	fetchCampaignMembersMock: vi.fn(),
+	fetchGitHubSponsorsMock: vi.fn(),
+}));
+
+vi.mock('patreon-api.ts', () => {
+	const queryBuilder = {
+		addRelationships: vi.fn().mockReturnThis(),
+		includeAll: vi.fn().mockReturnThis(),
+		includeAllRelationships: vi.fn().mockReturnThis(),
+	};
+
+	class PatreonCreatorClient {
+		fetchCampaignMembers = mocks.fetchCampaignMembersMock;
+	}
+
+	return {
+		PatreonCreatorClient,
+		QueryBuilder: {
+			campaignMembers: queryBuilder,
+		},
+		Type: {},
+	};
+});
+
+vi.mock('../src/github', () => ({
+	default: mocks.fetchGitHubSponsorsMock,
+}));
+
 import worker from '../src/index';
 
-// For now, you'll need to do something like this to get a correctly-typed
-// `Request` to pass to `worker.fetch()`.
-const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
+const baseEnv = {
+	PATREON_CLIENT_ID: 'patreon-client-id',
+	PATREON_CLIENT_SECRET: 'patreon-client-secret',
+	PATREON_ACCESS_TOKEN: 'patreon-access-token',
+	PATREON_REFRESH_TOKEN: 'patreon-refresh-token',
+	PATREON_CAMPAIGN_ID: 'patreon-campaign-id',
+	GITHUB_SPONSORS_TOKEN: 'github-token',
+} as unknown as Env;
 
-describe('Hello World worker', () => {
-	it('responds with Hello World! (unit style)', async () => {
-		const request = new IncomingRequest('http://example.com');
-		// Create an empty context to pass to `worker.fetch()`.
-		const ctx = createExecutionContext();
-		const response = await worker.fetch(request, env, ctx);
-		// Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
-		await waitOnExecutionContext(ctx);
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+describe('supporters list worker', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
 	});
 
-	it('responds with Hello World! (integration style)', async () => {
-		const response = await SELF.fetch('https://example.com');
-		expect(await response.text()).toMatchInlineSnapshot(`"Hello World!"`);
+	it('returns active Patreon supporters plus GitHub sponsors', async () => {
+		mocks.fetchGitHubSponsorsMock.mockResolvedValue([{ fullName: 'GH Sponsor' }]);
+		mocks.fetchCampaignMembersMock.mockResolvedValue({
+			data: [
+				{
+					attributes: {
+						patron_status: 'active_patron',
+						full_name: 'Active Patron',
+					},
+				},
+				{
+					attributes: {
+						patron_status: 'declined_patron',
+						full_name: 'Declined Patron',
+					},
+				},
+			],
+		});
+
+		const response = await worker.fetch(new Request('https://example.com'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
+		await expect(response.json()).resolves.toEqual([
+			{ fullName: 'Active Patron' },
+			{ fullName: 'GH Sponsor' },
+		]);
+		expect(mocks.fetchGitHubSponsorsMock).toHaveBeenCalledWith(baseEnv);
+		expect(mocks.fetchCampaignMembersMock).toHaveBeenCalledTimes(1);
+	});
+
+	it('still returns Patreon supporters when GitHub sponsors fetch fails', async () => {
+		mocks.fetchGitHubSponsorsMock.mockRejectedValue(new Error('GitHub failed'));
+		mocks.fetchCampaignMembersMock.mockResolvedValue({
+			data: [
+				{
+					attributes: {
+						patron_status: 'active_patron',
+						full_name: 'Active Patron',
+					},
+				},
+			],
+		});
+
+		const response = await worker.fetch(new Request('https://example.com'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
+		await expect(response.json()).resolves.toEqual([{ fullName: 'Active Patron' }]);
+	});
+
+	it('returns an empty array when Patreon request fails', async () => {
+		mocks.fetchGitHubSponsorsMock.mockResolvedValue([{ fullName: 'GH Sponsor' }]);
+		mocks.fetchCampaignMembersMock.mockRejectedValue(new Error('Patreon failed'));
+
+		const response = await worker.fetch(new Request('https://example.com'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
+		await expect(response.json()).resolves.toEqual([]);
 	});
 });
