@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-	fetchCampaignMembersMock: vi.fn(),
+	paginateCampaignMembersMock: vi.fn(),
 	fetchGitHubSponsorsMock: vi.fn(),
 }));
 
@@ -13,7 +13,7 @@ vi.mock('patreon-api.ts', () => {
 	};
 
 	class PatreonCreatorClient {
-		fetchCampaignMembers = mocks.fetchCampaignMembersMock;
+		paginateCampaignMembers = mocks.paginateCampaignMembersMock;
 	}
 
 	return {
@@ -21,7 +21,6 @@ vi.mock('patreon-api.ts', () => {
 		QueryBuilder: {
 			campaignMembers: queryBuilder,
 		},
-		Type: {},
 	};
 });
 
@@ -30,6 +29,12 @@ vi.mock('../src/github', () => ({
 }));
 
 import worker from '../src/index';
+
+function makePages(...pages: { data: unknown[] }[]) {
+	return (async function* () {
+		for (const page of pages) yield page;
+	})();
+}
 
 const baseEnv = {
 	PATREON_CLIENT_ID: 'patreon-client-id',
@@ -47,7 +52,7 @@ describe('supporters list worker', () => {
 
 	it('returns active Patreon supporters plus GitHub sponsors', async () => {
 		mocks.fetchGitHubSponsorsMock.mockResolvedValue([{ fullName: 'GH Sponsor' }]);
-		mocks.fetchCampaignMembersMock.mockResolvedValue({
+		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({
 			data: [
 				{
 					attributes: {
@@ -62,7 +67,7 @@ describe('supporters list worker', () => {
 					},
 				},
 			],
-		});
+		}));
 
 		const response = await worker.fetch(new Request('https://example.com'), baseEnv, {} as ExecutionContext);
 
@@ -72,12 +77,12 @@ describe('supporters list worker', () => {
 			{ fullName: 'GH Sponsor' },
 		]);
 		expect(mocks.fetchGitHubSponsorsMock).toHaveBeenCalledWith(baseEnv);
-		expect(mocks.fetchCampaignMembersMock).toHaveBeenCalledTimes(1);
+		expect(mocks.paginateCampaignMembersMock).toHaveBeenCalledTimes(1);
 	});
 
 	it('still returns Patreon supporters when GitHub sponsors fetch fails', async () => {
 		mocks.fetchGitHubSponsorsMock.mockRejectedValue(new Error('GitHub failed'));
-		mocks.fetchCampaignMembersMock.mockResolvedValue({
+		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({
 			data: [
 				{
 					attributes: {
@@ -86,7 +91,7 @@ describe('supporters list worker', () => {
 					},
 				},
 			],
-		});
+		}));
 
 		const response = await worker.fetch(new Request('https://example.com'), baseEnv, {} as ExecutionContext);
 
@@ -94,13 +99,65 @@ describe('supporters list worker', () => {
 		await expect(response.json()).resolves.toEqual([{ fullName: 'Active Patron' }]);
 	});
 
-	it('returns an empty array when Patreon request fails', async () => {
+	it('still returns GitHub sponsors when Patreon request fails', async () => {
 		mocks.fetchGitHubSponsorsMock.mockResolvedValue([{ fullName: 'GH Sponsor' }]);
-		mocks.fetchCampaignMembersMock.mockRejectedValue(new Error('Patreon failed'));
+		mocks.paginateCampaignMembersMock.mockReturnValue((async function* () {
+			throw new Error('Patreon failed');
+		})());
+
+		const response = await worker.fetch(new Request('https://example.com'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
+		await expect(response.json()).resolves.toEqual([{ fullName: 'GH Sponsor' }]);
+	});
+
+	it('returns empty array when both fetches fail', async () => {
+		mocks.fetchGitHubSponsorsMock.mockRejectedValue(new Error('GitHub failed'));
+		mocks.paginateCampaignMembersMock.mockReturnValue((async function* () {
+			throw new Error('Patreon failed');
+		})());
 
 		const response = await worker.fetch(new Request('https://example.com'), baseEnv, {} as ExecutionContext);
 
 		expect(response.status).toBe(200);
 		await expect(response.json()).resolves.toEqual([]);
+	});
+
+	it('returns only GitHub sponsors when Patreon returns no active patrons', async () => {
+		mocks.fetchGitHubSponsorsMock.mockResolvedValue([{ fullName: 'GH Sponsor' }]);
+		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({ data: [] }));
+
+		const response = await worker.fetch(new Request('https://example.com'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
+		await expect(response.json()).resolves.toEqual([{ fullName: 'GH Sponsor' }]);
+	});
+
+	it('orders Patreon supporters before GitHub sponsors', async () => {
+		mocks.fetchGitHubSponsorsMock.mockResolvedValue([{ fullName: 'GH Sponsor 1' }, { fullName: 'GH Sponsor 2' }]);
+		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({
+			data: [
+				{ attributes: { patron_status: 'active_patron', full_name: 'Patron 1' } },
+				{ attributes: { patron_status: 'active_patron', full_name: 'Patron 2' } },
+			],
+		}));
+
+		const response = await worker.fetch(new Request('https://example.com'), baseEnv, {} as ExecutionContext);
+
+		await expect(response.json()).resolves.toEqual([
+			{ fullName: 'Patron 1' },
+			{ fullName: 'Patron 2' },
+			{ fullName: 'GH Sponsor 1' },
+			{ fullName: 'GH Sponsor 2' },
+		]);
+	});
+
+	it('passes env to GitHub sponsors fetcher', async () => {
+		mocks.fetchGitHubSponsorsMock.mockResolvedValue([]);
+		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({ data: [] }));
+
+		await worker.fetch(new Request('https://example.com'), baseEnv, {} as ExecutionContext);
+
+		expect(mocks.fetchGitHubSponsorsMock).toHaveBeenCalledWith(baseEnv);
 	});
 });

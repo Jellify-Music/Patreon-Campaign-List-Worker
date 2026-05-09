@@ -18,15 +18,11 @@ export default async function fetchGitHubSponsors(env: Env): Promise<Supporter[]
 		}
 	`;
 
-    // @ts-ignore
-    console.info(`Fetching GitHub Sponsors. ${env.GITHUB_SPONSORS_TOKEN ? env.GITHUB_SPONSORS_TOKEN.length : 0} characters in token.`);
-
     const response = await fetch(GITHUB_API_URL, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'User-Agent': 'Jellify-Patreon-Campaign-List-Worker',
-            // @ts-ignore
             'Authorization': `Bearer ${env.GITHUB_SPONSORS_TOKEN}`,
         },
         body: JSON.stringify({ query }),
