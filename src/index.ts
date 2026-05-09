@@ -19,6 +19,12 @@ export default {
 		} catch (error) {
 			console.error('Failed to fetch Patreon members', error);
 		}
-		return new Response(JSON.stringify(patreonSupporters.concat(githubSupporters)));
+
+		let response = [
+			...patreonSupporters,
+			...githubSupporters,
+		]
+
+		return new Response(JSON.stringify(response));
 	},
 } satisfies ExportedHandler<Env>;
