@@ -11,13 +11,13 @@ const SPECIAL_THANKS: Supporter[] = [
     { fullName: '@Chaphasilor', url: 'https://github.com/Chaphasilor' },
     { fullName: 'Erik Balchunas' },
     { fullName: 'Lyssa VanDomelen' },
-    { fullName: 'James Harvey' },
+    { fullName: 'James Harvey', url: 'https://github.com/UnicornsOnLSD' },
     { fullName: 'Niels van Velzen', url: 'https://github.com/nielsvanvelzen' },
     { fullName: '@PBD3D' },
     { fullName: 'Ritesh Shukla', url: 'https://github.com/riteshshukla04' },
     { fullName: 'Thalia Fields' },
     { fullName: '@skalthoff', url: 'https://github.com/skalthoff' },
-    { fullName: '@skribe', url: 'https://github.com/skribe' },
+    { fullName: '@skribe' },
 ];
 
 export default SPECIAL_THANKS;
