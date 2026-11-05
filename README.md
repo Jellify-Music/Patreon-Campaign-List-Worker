@@ -4,3 +4,11 @@ Deployed as a Cloudflare Worker, retrieves a list of Jellify patreon campaign su
 
 This was created so that Jellify could display a list of paid supporters within the app, all while
 keeping tokens secure
+
+
+## Endpoints
+
+| Method | Path | Description |
+| --- | --- | --- |
+| `GET` | `/api/v1/patrons` | Active Patreon supporters followed by GitHub Sponsors, as `{ fullName: string }[]` |
+| `GET` | `/` | Legacy alias of `/api/v1/patrons`, kept for backwards compatibility with existing App builds |
