@@ -6,18 +6,18 @@ import { Supporter } from "./types";
  * Update this list via PR + deploy to change it without an App release.
  */
 const SPECIAL_THANKS: Supporter[] = [
-    'Bill Thornton',
-    '@BotBlake',
-    '@Chaphasilor',
-    'Erik Balchunas',
-    'Lyssa VanDomelen',
-    'James Harvey',
-    'Niels van Velzen',
-    '@PBD3D',
-    'Ritesh Shukla',
-    'Thalia Fields',
-    '@skalthoff',
-    '@skribe',
-].map((fullName) => ({ fullName }));
+    { fullName: 'Bill Thornton', url: 'https://github.com/thornbill' },
+    { fullName: '@BotBlake', url: 'https://github.com/BotBlake' },
+    { fullName: '@Chaphasilor', url: 'https://github.com/Chaphasilor' },
+    { fullName: 'Erik Balchunas' },
+    { fullName: 'Lyssa VanDomelen' },
+    { fullName: 'James Harvey' },
+    { fullName: 'Niels van Velzen', url: 'https://github.com/nielsvanvelzen' },
+    { fullName: '@PBD3D' },
+    { fullName: 'Ritesh Shukla', url: 'https://github.com/riteshshukla04' },
+    { fullName: 'Thalia Fields' },
+    { fullName: '@skalthoff', url: 'https://github.com/skalthoff' },
+    { fullName: '@skribe', url: 'https://github.com/skribe' },
+];
 
 export default SPECIAL_THANKS;

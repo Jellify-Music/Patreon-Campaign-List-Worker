@@ -201,11 +201,15 @@ describe('supporters list worker', () => {
 
 		expect(response.status).toBe(200);
 		expect(response.headers.get('Content-Type')).toBe('application/json');
-		const body = await response.json<{ fullName: string }[]>();
+		const body = await response.json<{ fullName: string, url?: string }[]>();
 		expect(body.length).toBeGreaterThan(0);
-		expect(body).toContainEqual({ fullName: 'Bill Thornton' });
-		for (const entry of body) {
-			expect(entry).toEqual({ fullName: expect.any(String) });
+		expect(body).toContainEqual({ fullName: 'Bill Thornton', url: 'https://github.com/thornbill' });
+		expect(body).toContainEqual({ fullName: 'Erik Balchunas' });
+		for (const { fullName, url } of body) {
+			expect(fullName).toEqual(expect.any(String));
+			if (url !== undefined) {
+				expect(new URL(url).protocol).toBe('https:');
+			}
 		}
 		expect(mocks.fetchGitHubSponsorsMock).not.toHaveBeenCalled();
 		expect(mocks.paginateCampaignMembersMock).not.toHaveBeenCalled();
