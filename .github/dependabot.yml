@@ -14,6 +14,11 @@ updates:
       types:
         patterns:
           - "@types/*"
+    ignore:
+      # vitest 5.1 calls AsyncLocalStorage.disable(), which workerd doesn't implement,
+      # breaking vi.mock under @cloudflare/vitest-plugin. Remove once that's fixed.
+      - dependency-name: "vitest"
+        versions: ["5.1.x"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
