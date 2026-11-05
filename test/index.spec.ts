@@ -160,4 +160,47 @@ describe('supporters list worker', () => {
 
 		expect(mocks.fetchGitHubSponsorsMock).toHaveBeenCalledWith(baseEnv);
 	});
+
+	it('serves the patrons list at /api/v1/patrons', async () => {
+		mocks.fetchGitHubSponsorsMock.mockResolvedValue([{ fullName: 'GH Sponsor' }]);
+		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({
+			data: [{ attributes: { patron_status: 'active_patron', full_name: 'Active Patron' } }],
+		}));
+
+		const response = await worker.fetch(new Request('https://example.com/api/v1/patrons'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get('Content-Type')).toBe('application/json');
+		await expect(response.json()).resolves.toEqual([
+			{ fullName: 'Active Patron' },
+			{ fullName: 'GH Sponsor' },
+		]);
+	});
+
+	it('accepts a trailing slash on /api/v1/patrons', async () => {
+		mocks.fetchGitHubSponsorsMock.mockResolvedValue([{ fullName: 'GH Sponsor' }]);
+		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({ data: [] }));
+
+		const response = await worker.fetch(new Request('https://example.com/api/v1/patrons/'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
+		await expect(response.json()).resolves.toEqual([{ fullName: 'GH Sponsor' }]);
+	});
+
+	it('returns 405 for non-GET requests to /api/v1/patrons', async () => {
+		const response = await worker.fetch(new Request('https://example.com/api/v1/patrons', { method: 'POST' }), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(405);
+		expect(response.headers.get('Allow')).toBe('GET');
+		expect(mocks.fetchGitHubSponsorsMock).not.toHaveBeenCalled();
+		expect(mocks.paginateCampaignMembersMock).not.toHaveBeenCalled();
+	});
+
+	it('returns 404 for unknown /api/v1 routes', async () => {
+		const response = await worker.fetch(new Request('https://example.com/api/v1/unknown'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(404);
+		expect(mocks.fetchGitHubSponsorsMock).not.toHaveBeenCalled();
+		expect(mocks.paginateCampaignMembersMock).not.toHaveBeenCalled();
+	});
 });
