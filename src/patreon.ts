@@ -1,6 +1,8 @@
 import { PatreonCreatorClient, QueryBuilder } from 'patreon-api.ts'
 import { Supporter } from "./types";
 
+const PATREON_BASE_URL = 'https://www.patreon.com';
+
 const membersQuery = QueryBuilder.campaignMembers
     .addRelationships(['user', 'currently_entitled_tiers', 'campaign'])
     .includeAll()
@@ -15,9 +17,12 @@ export default async function fetchPatreonSupporters(env: Env) : Promise<Support
             token: {
                 access_token: env.PATREON_ACCESS_TOKEN,
                 refresh_token: env.PATREON_REFRESH_TOKEN,
-            }
+            },
+            // The patreon.com apex domain no longer resolves, so use www
+            accessTokenUri: `${PATREON_BASE_URL}/api/oauth2/token`,
         },
         rest: {
+            api: `${PATREON_BASE_URL}/api/oauth2/v2`,
             includeAllQueries: true
         }
     })
