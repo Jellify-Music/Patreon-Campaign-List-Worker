@@ -1,6 +1,7 @@
 import { Supporter } from './types';
 import fetchGitHubSponsors from './github';
 import fetchPatreonSupporters from './patreon';
+import SPECIAL_THANKS from './special-thanks';
 
 const API_V1_PREFIX = '/api/v1';
 
@@ -40,6 +41,11 @@ async function handleApiV1(request: Request, env: Env, path: string): Promise<Re
 				return json({ error: 'Method Not Allowed' }, { status: 405, headers: { Allow: 'GET' } });
 			}
 			return json(await fetchPatrons(env));
+		case '/special-thanks':
+			if (request.method !== 'GET') {
+				return json({ error: 'Method Not Allowed' }, { status: 405, headers: { Allow: 'GET' } });
+			}
+			return json(SPECIAL_THANKS);
 		default:
 			return json({ error: 'Not Found' }, { status: 404 });
 	}

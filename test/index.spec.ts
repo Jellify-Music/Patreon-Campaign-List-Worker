@@ -196,6 +196,34 @@ describe('supporters list worker', () => {
 		expect(mocks.paginateCampaignMembersMock).not.toHaveBeenCalled();
 	});
 
+	it('serves the special thanks list at /api/v1/special-thanks', async () => {
+		const response = await worker.fetch(new Request('https://example.com/api/v1/special-thanks'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get('Content-Type')).toBe('application/json');
+		const body = await response.json<{ fullName: string }[]>();
+		expect(body.length).toBeGreaterThan(0);
+		expect(body).toContainEqual({ fullName: 'Bill Thornton' });
+		for (const entry of body) {
+			expect(entry).toEqual({ fullName: expect.any(String) });
+		}
+		expect(mocks.fetchGitHubSponsorsMock).not.toHaveBeenCalled();
+		expect(mocks.paginateCampaignMembersMock).not.toHaveBeenCalled();
+	});
+
+	it('accepts a trailing slash on /api/v1/special-thanks', async () => {
+		const response = await worker.fetch(new Request('https://example.com/api/v1/special-thanks/'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
+	});
+
+	it('returns 405 for non-GET requests to /api/v1/special-thanks', async () => {
+		const response = await worker.fetch(new Request('https://example.com/api/v1/special-thanks', { method: 'POST' }), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(405);
+		expect(response.headers.get('Allow')).toBe('GET');
+	});
+
 	it('returns 404 for unknown /api/v1 routes', async () => {
 		const response = await worker.fetch(new Request('https://example.com/api/v1/unknown'), baseEnv, {} as ExecutionContext);
 
