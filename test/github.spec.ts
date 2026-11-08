@@ -6,12 +6,15 @@ const baseEnv = {
 	GITHUB_SPONSORS_TOKEN: 'github-token',
 } as unknown as Env;
 
-function makeGitHubResponse(nodes: unknown[], status = 200): Response {
+function makeGitHubResponse(nodes: unknown[], orgNodes: unknown[] = [], status = 200): Response {
 	return new Response(
 		JSON.stringify({
 			data: {
 				viewer: {
 					sponsorshipsAsMaintainer: { nodes },
+				},
+				organization: {
+					sponsorshipsAsMaintainer: { nodes: orgNodes },
 				},
 			},
 		}),
@@ -69,6 +72,65 @@ describe('fetchGitHubSponsors', () => {
 		const result = await fetchGitHubSponsors(baseEnv);
 
 		expect(result).toEqual([{ fullName: 'Bob' }]);
+	});
+
+	it('includes sponsors of the Jellify-Music organization', async () => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			makeGitHubResponse(
+				[{ sponsorEntity: { login: 'alice', name: 'Alice' } }],
+				[{ sponsorEntity: { login: 'wenkca', name: null } }],
+			),
+		);
+
+		const result = await fetchGitHubSponsors(baseEnv);
+
+		expect(result).toEqual([{ fullName: 'Alice' }, { fullName: 'wenkca' }]);
+	});
+
+	it('de-duplicates sponsors of both the viewer and the organization', async () => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			makeGitHubResponse(
+				[{ sponsorEntity: { login: 'alice', name: 'Alice' } }],
+				[
+					{ sponsorEntity: { login: 'alice', name: 'Alice' } },
+					{ sponsorEntity: { login: 'bob', name: 'Bob' } },
+				],
+			),
+		);
+
+		const result = await fetchGitHubSponsors(baseEnv);
+
+		expect(result).toEqual([{ fullName: 'Alice' }, { fullName: 'Bob' }]);
+	});
+
+	it('still returns viewer sponsors when organization is null', async () => {
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			new Response(
+				JSON.stringify({
+					data: {
+						viewer: {
+							sponsorshipsAsMaintainer: {
+								nodes: [{ sponsorEntity: { login: 'alice', name: 'Alice' } }],
+							},
+						},
+						organization: null,
+					},
+				}),
+			),
+		);
+
+		const result = await fetchGitHubSponsors(baseEnv);
+
+		expect(result).toEqual([{ fullName: 'Alice' }]);
+	});
+
+	it('requests sponsorships of the Jellify-Music organization', async () => {
+		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeGitHubResponse([]));
+
+		await fetchGitHubSponsors(baseEnv);
+
+		const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+		expect(body.query).toContain('organization(login: "Jellify-Music")');
 	});
 
 	it('returns empty array when nodes is empty', async () => {

@@ -2,19 +2,25 @@ import { Supporter } from "./types";
 
 const GITHUB_API_URL = 'https://api.github.com/graphql';
 
+const GITHUB_ORGANIZATION = 'Jellify-Music';
+
 export default async function fetchGitHubSponsors(env: Env): Promise<Supporter[]> {
+    // Sponsors of the token owner and of the Jellify-Music organization
     const query = `
-		query {
-			viewer {
-				sponsorshipsAsMaintainer(first: 100, includePrivate: true) {
-					nodes {
-						sponsorEntity {
-							... on User { login name }
-							... on Organization { login name }
-						}
+		fragment Sponsors on Sponsorable {
+			sponsorshipsAsMaintainer(first: 100, includePrivate: true) {
+				nodes {
+					sponsorEntity {
+						... on User { login name }
+						... on Organization { login name }
 					}
 				}
 			}
+		}
+
+		query {
+			viewer { ...Sponsors }
+			organization(login: "${GITHUB_ORGANIZATION}") { ...Sponsors }
 		}
 	`;
 
@@ -36,10 +42,22 @@ export default async function fetchGitHubSponsors(env: Env): Promise<Supporter[]
         
         console.debug(`GitHub API response OK: ${JSON.stringify(json)}`);
         
-        const sponsors = json.data?.viewer?.sponsorshipsAsMaintainer?.nodes ?? [];
-        
+        const sponsors = [
+            ...(json.data?.viewer?.sponsorshipsAsMaintainer?.nodes ?? []),
+            ...(json.data?.organization?.sponsorshipsAsMaintainer?.nodes ?? []),
+        ];
+
+        // Someone sponsoring both the token owner and the organization should only appear once
+        const seen = new Set<string>();
+
         return sponsors
             .filter((sponsor: any) => sponsor != null && sponsor.sponsorEntity)
+            .filter((n: any) => {
+                const login = n.sponsorEntity.login;
+                if (seen.has(login)) return false;
+                seen.add(login);
+                return true;
+            })
             .map((n: any) => {
             return {
                 fullName: n.sponsorEntity?.name || n.sponsorEntity?.login
