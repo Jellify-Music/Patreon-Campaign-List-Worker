@@ -1,9 +1,16 @@
 # Patron Cloudflare Worker
 
-Deployed as a Cloudflare Worker, retrieves a list of Jellify patreon campaign supporters and public GitHub Sponsors. 
+Deployed as a Cloudflare Worker, retrieves a list of Jellify patreon campaign supporters and GitHub Sponsors (of both the token owner and the Jellify-Music organization).
 
 This was created so that Jellify could display a list of paid supporters within the app, all while
 keeping tokens secure
+
+## Secrets
+
+| Name | Description |
+| --- | --- |
+| `GITHUB_SPONSORS_TOKEN` | GitHub token owned by the maintainer's user account, used to read their GitHub Sponsors |
+| `GITHUB_ORG_SPONSORS_TOKEN` | GitHub token with the Jellify-Music organization as its resource owner, used to read the organization's GitHub Sponsors. Optional; organization sponsors are skipped when unset |
 
 
 ## Endpoints
