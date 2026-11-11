@@ -5,7 +5,7 @@
     "": {
       "name": "supporters-list-function",
       "dependencies": {
-        "patreon-api.ts": "0.20.0",
+        "patreon-api.ts": "0.21.0",
       },
       "devDependencies": {
         "@cloudflare/vitest-plugin": "1.6.0",
@@ -277,7 +277,7 @@
 
     "pathe": ["pathe@2.0.3", "", {}, "sha512-WUjGcAqP1gQacoQe+OBJsFA7Ld4DyXuUIjZ5cc75cLHvJ7dtNsTugphxIADwspS+AraAUePCKrSVtPLFj/F88w=="],
 
-    "patreon-api.ts": ["patreon-api.ts@0.20.0", "", {}, "sha512-ha9D9ynofWwj0pybUdz1Ux2pZC5QIYw6WiKg+0NZ5kxgvW4gR2JQrLfARo6ttmsnjYd0pnb5/VeuA/Imb/RINw=="],
+    "patreon-api.ts": ["patreon-api.ts@0.21.0", "", {}, "sha512-k3B6gGhAGcKYmBIZdXXWEKu2TIrseEHG5ZLFz59DuhOyLsf4Dk05AsMc55Z7X05pAUlGdGZQemvecTb1stHFoA=="],
 
     "picocolors": ["picocolors@1.1.1", "", {}, "sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA=="],
 
