@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
 	paginateCampaignMembersMock: vi.fn(),
+	clientOptions: vi.fn(),
 }));
 
 vi.mock('patreon-api.ts', () => {
@@ -13,6 +14,10 @@ vi.mock('patreon-api.ts', () => {
 
 	class PatreonCreatorClient {
 		paginateCampaignMembers = mocks.paginateCampaignMembersMock;
+
+		constructor(options: unknown) {
+			mocks.clientOptions(options);
+		}
 	}
 
 	return {
@@ -109,6 +114,28 @@ describe('fetchPatreonSupporters', () => {
 		await fetchPatreonSupporters(baseEnv);
 
 		expect(mocks.paginateCampaignMembersMock).toHaveBeenCalledWith('patreon-campaign-id', expect.anything());
+	});
+
+	it('creates the client with credentials from env and www.patreon.com URLs', async () => {
+		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({ data: [] }));
+
+		await fetchPatreonSupporters(baseEnv);
+
+		expect(mocks.clientOptions).toHaveBeenCalledWith({
+			oauth: {
+				clientId: 'patreon-client-id',
+				clientSecret: 'patreon-client-secret',
+				token: {
+					access_token: 'patreon-access-token',
+					refresh_token: 'patreon-refresh-token',
+				},
+				accessTokenUri: 'https://www.patreon.com/api/oauth2/token',
+			},
+			rest: {
+				api: 'https://www.patreon.com/api/oauth2/v2',
+				includeAllQueries: true,
+			},
+		});
 	});
 
 	it('propagates errors from paginateCampaignMembers', async () => {
