@@ -161,6 +161,27 @@ describe('supporters list worker', () => {
 		expect(mocks.fetchGitHubSponsorsMock).toHaveBeenCalledWith(baseEnv);
 	});
 
+	it('serves the patrons list on legacy paths outside /api/v1', async () => {
+		mocks.fetchGitHubSponsorsMock.mockResolvedValue([{ fullName: 'GH Sponsor' }]);
+		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({ data: [] }));
+
+		const response = await worker.fetch(new Request('https://example.com/some/old/path'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
+		expect(response.headers.get('Content-Type')).toBe('application/json');
+		await expect(response.json()).resolves.toEqual([{ fullName: 'GH Sponsor' }]);
+	});
+
+	it('does not treat paths that merely start with /api/v1 as API routes', async () => {
+		mocks.fetchGitHubSponsorsMock.mockResolvedValue([{ fullName: 'GH Sponsor' }]);
+		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({ data: [] }));
+
+		const response = await worker.fetch(new Request('https://example.com/api/v10/patrons'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
+		await expect(response.json()).resolves.toEqual([{ fullName: 'GH Sponsor' }]);
+	});
+
 	it('serves the patrons list at /api/v1/patrons', async () => {
 		mocks.fetchGitHubSponsorsMock.mockResolvedValue([{ fullName: 'GH Sponsor' }]);
 		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({
@@ -185,6 +206,15 @@ describe('supporters list worker', () => {
 
 		expect(response.status).toBe(200);
 		await expect(response.json()).resolves.toEqual([{ fullName: 'GH Sponsor' }]);
+	});
+
+	it('accepts repeated trailing slashes on /api/v1/patrons', async () => {
+		mocks.fetchGitHubSponsorsMock.mockResolvedValue([]);
+		mocks.paginateCampaignMembersMock.mockReturnValue(makePages({ data: [] }));
+
+		const response = await worker.fetch(new Request('https://example.com/api/v1/patrons//'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(200);
 	});
 
 	it('returns 405 for non-GET requests to /api/v1/patrons', async () => {
@@ -234,5 +264,12 @@ describe('supporters list worker', () => {
 		expect(response.status).toBe(404);
 		expect(mocks.fetchGitHubSponsorsMock).not.toHaveBeenCalled();
 		expect(mocks.paginateCampaignMembersMock).not.toHaveBeenCalled();
+	});
+
+	it('returns 404 for the bare /api/v1 prefix', async () => {
+		const response = await worker.fetch(new Request('https://example.com/api/v1'), baseEnv, {} as ExecutionContext);
+
+		expect(response.status).toBe(404);
+		await expect(response.json()).resolves.toEqual({ error: 'Not Found' });
 	});
 });

@@ -111,6 +111,29 @@ describe('fetchGitHubSponsors', () => {
 		expect(result).toEqual([{ fullName: 'Alice' }]);
 	});
 
+	it('still returns organization sponsors when the viewer request throws', async () => {
+		vi.spyOn(globalThis, 'fetch').mockImplementation(async (_, init) => {
+			if ((init?.headers as Record<string, string>).Authorization === 'Bearer github-token') {
+				throw new TypeError('Network error');
+			}
+			return makeGitHubResponse([], [{ sponsorEntity: { login: 'bob', name: 'Bob' } }])(_, init);
+		});
+
+		const result = await fetchGitHubSponsors(baseEnv);
+
+		expect(result).toEqual([{ fullName: 'Bob' }]);
+	});
+
+	it('returns empty array when the GraphQL response has errors and no data', async () => {
+		vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+			new Response(JSON.stringify({ errors: [{ message: 'Bad credentials' }] }), { status: 200 }),
+		);
+
+		const result = await fetchGitHubSponsors(baseEnv);
+
+		expect(result).toEqual([]);
+	});
+
 	it('skips the organization request when GITHUB_ORG_SPONSORS_TOKEN is not set', async () => {
 		const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
 			makeGitHubResponse([{ sponsorEntity: { login: 'alice', name: 'Alice' } }]),
